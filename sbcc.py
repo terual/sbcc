@@ -26,7 +26,7 @@ from subprocess import Popen
 from pysqueezecenter.server import Server
 from pysqueezecenter.player import Player
 from urllib import unquote
-from time import time 
+from time import time, sleep
 
 import player
 import setup
@@ -40,7 +40,12 @@ def main(sbs, sq, song):
     try:
         current = []
         while True:
-            state = unquote(sbs.telnet.read_until("\n"))
+            try:
+                state = unquote(sbs.telnet.read_until("\n"))
+            except EOFError:
+                logging.critical("Connection lost to server!")
+                break
+
             state = functions.stripmac(state, config['mac'])
             logging.debug("TELNET: %s", state)
 
@@ -83,9 +88,54 @@ def main(sbs, sq, song):
 
     except KeyboardInterrupt:
         logging.warning("Catched KeyboardInterrupt, exiting...")
+        return True
 
     finally:
+        logging.info("Killing remaining processes")
         song.kill()
+
+
+def connect(config):
+    # Connect to SBS
+    sbs = Server(hostname=config['host'], 
+                 port=config['port'], 
+                 username=config['user'], 
+                 password=config['passwd'] )
+
+    # Check connection
+    try:
+        sbs.connect()
+        if sbs.logged_in:
+            logging.info("Connected to Squeezebox Server v%s on %s:%s", sbs.get_version(), config['host'], config['port'])
+        else:
+            logging.critical("Could not connect to server, possible wrong credentials")
+            exit(1)
+    except socketerror:
+        logging.critical("Network is unreachable (check network connection and/or IP/port settings of your SB server)")
+        p = Popen(["play", "noconnection.wav"], stdout=nulfp.fileno(), stderr=nulfp.fileno())
+        return None, None
+
+    # Additional info
+    sq = sbs.get_player(config['mac'])
+    logging.info("Copying behaviour of SB '%s'", sq.get_name())
+    logging.info("Mode: %s | Time: %s | Connected: %s | WiFi: %s", 
+                 sq.get_mode(), sq.get_time_elapsed(), 
+                 sq.is_connected, sq.get_wifi_signal_strength())
+
+    # Setting volume of alsa to volume of sb
+    volume = sq.get_volume()
+    retcode = Popen(['amixer', 'set', 'Master', str(volume)+"%"], stdout=nulfp.fileno(), stderr=nulfp.fileno()).wait()
+    if retcode==0:
+        logging.info('Local volume set to %s percent', volume)
+    else:
+        logging.info('Local volume set failed with return code %i', retcode)
+
+    # All the magic: in this request we subscribe to all playlist events
+    # and volume changes
+    sbs.request("subscribe playlist%2Cmixer volume")
+
+    return sbs, sq
+
 
 
 if __name__ == '__main__':
@@ -128,47 +178,15 @@ if __name__ == '__main__':
         logging.debug("%s: %s", key, config[key])
 
 
-    # Connect to SBS
-    sbs = Server(hostname=config['host'], 
-                 port=config['port'], 
-                 username=config['user'], 
-                 password=config['passwd'] )
-
-    # Check connection
-    try:
-        sbs.connect()
-        if sbs.logged_in:
-            logging.info("Connected to Squeezebox Server v%s on %s:%s", sbs.get_version(), config['host'], config['port'])
-        else:
-            logging.critical("Could not connect to server, possible wrong credentials")
-            exit(1)
-    except socketerror:
-        logging.critical("Network is unreachable (check network connection and/or IP/port settings of your SB server)")
-        p = Popen(["play", "noconnection.wav"])
-        exit(1)
-
-    # Additional info
-    sq = sbs.get_player(config['mac'])
-    logging.info("Copying behaviour of SB '%s'", sq.get_name())
-    logging.info("Mode: %s | Time: %s | Connected: %s | WiFi: %s", 
-                 sq.get_mode(), sq.get_time_elapsed(), 
-                 sq.is_connected, sq.get_wifi_signal_strength())
-
-    # Setting volume of alsa to volume of sb
-    volume = sq.get_volume()
-    retcode = Popen(['amixer', 'set', 'Master', str(volume)+"%"], stdout=nulfp.fileno(), stderr=nulfp.fileno()).wait()
-    if retcode==0:
-        logging.info('Local volume set to %s percent', volume)
-    else:
-        logging.info('Local volume set failed with return code %i', retcode)
-
-    # All the magic: in this request we subscribe to all playlist events
-    # and volume changes
-    sbs.request("subscribe playlist%2Cmixer volume")
-
-    # Initialise our song instance and go to main loop
-    song = player.player(config['driver'], config['output'])
-    main(sbs, sq, song)
+    # Initialise connection, our song instance and go to main loop
+    while True:
+        sbs, sq = connect(config)
+        if sbs and sq:
+            song = player.player(config['driver'], config['output'])
+            if main(sbs, sq, song):
+                exit(0)
+        #Wait for connection to reappear
+        sleep(15)
 
 
 
