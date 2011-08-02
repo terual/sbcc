@@ -1,0 +1,7 @@
+squeezebox copycat (sbcc)
+
+This script mimics a Squeezebox on your network using the CLI interface to 
+your Squeezebox Server. It is written in Python and you need the
+pysqueezecenter package from http://code.google.com/p/pysqueezecenter/.
+
+It runs until now only on Linux.
