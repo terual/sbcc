@@ -19,7 +19,7 @@
 import logging
 from subprocess import Popen
 from os import devnull
-from datetime import timedelta
+
 
 def get_time_info(state):
     if "#" in state:
@@ -29,9 +29,9 @@ def get_time_info(state):
         end = float(end)
         begin = float(begin)
         newstate = [state, 
-                    str(timedelta(seconds=begin)), 
-                    str(timedelta(seconds=end)), 
-                    str(timedelta(seconds=length))]
+                    begin, 
+                    end, 
+                    length]
     else:
         newstate = [state, "", "", ""]
 

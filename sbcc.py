@@ -59,7 +59,9 @@ def main(sbs, sq, song):
                 if not state_time==current:
                     song.open(state_time)
                     current = state_time
-                    logging.debug("Loaded song")
+                    logging.debug("Song loaded")
+                else:
+                    logging.debug("Duplicate 'open': %s", state_time)
 
             elif "newsong" in state:
                 logging.info("Start playback '%s - %s'", sq.get_track_artist(), sq.get_track_title())
@@ -81,6 +83,11 @@ def main(sbs, sq, song):
                 state = state.strip()
                 logging.info("Change volume to %s percent", state)
                 Popen(['amixer', 'set', 'Master', str(state)+"%"], stdout=nulfp.fileno())
+
+            elif "time" in state:
+                state = state.replace("time", "")
+                state = state.strip()
+                song.seekto(state)
 
             else:
                 #telnet command which do not get interpreted
@@ -130,9 +137,9 @@ def connect(config):
     else:
         logging.info('Local volume set failed with return code %i', retcode)
 
-    # All the magic: in this request we subscribe to all playlist events
-    # and volume changes
-    sbs.request("subscribe playlist%2Cmixer volume")
+    # All the magic: in this request we subscribe to all playlist events,
+    # time changes, and volume changes
+    sbs.request("subscribe time%2Cplaylist%2Cmixer volume")
 
     return sbs, sq
 
@@ -140,7 +147,7 @@ def connect(config):
 
 if __name__ == '__main__':
 
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
+    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S', level=logging.DEBUG)
     nulfp = open(devnull, "w")
 
     print "\nsbcc - SqueezeBox CopyCat version 0.5  Copyright (C) 2010-2011 Bart Lauret"
@@ -184,6 +191,7 @@ if __name__ == '__main__':
         if sbs and sq:
             song = player.player(config['driver'], config['output'])
             if main(sbs, sq, song):
+                # This means that we want to exit and not stay in loop
                 exit(0)
         #Wait for connection to reappear
         sleep(15)

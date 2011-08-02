@@ -21,6 +21,7 @@ import subprocess
 import logging
 from os import devnull
 from time import time
+from datetime import timedelta
 
 class player:
     """
@@ -38,36 +39,41 @@ class player:
         self.output = output
 
     def open(self, state):
-        if state[1]:
+        self.filename = state[0]
+        self.begin = state[1]
+        self.end = state[2]
+        self.length = state[3]
+
+        if self.begin:
             # Time information available, assuming image+cue
-            if ".flac" in state[0]:
+            if ".flac" in self.filename:
                 self.cmd = ['flac', 
                             '-dcs', 
-                            '--skip='+state[1].replace("0:", "", 1), 
-                            '--until='+state[2].replace("0:", "", 1), 
-                            state[0]]
+                            '--skip='+str(timedelta(seconds=self.begin)).replace("0:", "", 1), 
+                            '--until='+str(timedelta(seconds=self.end)).replace("0:", "", 1), 
+                            self.filename]
             else:
                 self.cmd = ['sox', 
                             '--no-show-progress', 
-                            state[0], 
-                            'trim', state[1], state[3], 
+                            self.filename, 
+                            'trim', str(timedelta(seconds=self.begin)), str(timedelta(seconds=self.length)), 
                             '--type', 'wav', 
                             '-' ]
         else:
-            if ".flac" in state[0]:
+            if ".flac" in self.filename:
                 self.cmd = ['flac', 
                             '-dcs', 
-                            state[0]]
-            elif ".mp3" in state[0]:
+                            self.filename]
+            elif ".mp3" in self.filename:
                 self.cmd = ['lame', 
                             '--decode', 
                             '--silent', 
-                            state[0], 
+                            self.filename, 
                             '-']
             else:
                 self.cmd = ['sox', 
                             '--no-show-progress', 
-                            state[0], 
+                            self.filename, 
                             '--type', 'wav', 
                             '-' ]
 
@@ -103,6 +109,16 @@ class player:
         if not self.process_dec.poll()==None:
             logging.error("Error in decoding process, return code %s", self.process_dec.poll())
 
+    def seekto(self, time):
+        if self.play_pid:
+            try:
+                time = float(time)
+                self.kill()
+                self.open([self.filename, self.begin+time, self.end, self.length-time])
+                logging.debug("Seeking to %s", time)
+            except:
+                pass
+
     def play(self):
         if self.play_pid:
             self.process_dec.send_signal(signal.SIGCONT)
@@ -112,6 +128,7 @@ class player:
             self.process_dec.send_signal(signal.SIGSTOP)
 
     def kill(self):
+
         if self.play_pid:
             try:
                 self.process.kill()
