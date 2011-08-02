@@ -93,9 +93,9 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
     nulfp = open(devnull, "w")
 
-    print "\nsbcc - SqueezeBox CopyCat version 0.5  Copyright (C) 2010 Bart Lauret"
-    print "sbcc comes with ABSOLUTELY NO WARRANTY.  This is free software, and you are\nwelcome to redistribute it under certain conditions."
-    print "Use the --daemon or -d option to start %s as a daemon.\n" % argv[0]
+    print "\nsbcc - SqueezeBox CopyCat version 0.5  Copyright (C) 2010-2011 Bart Lauret"
+    print "sbcc comes with ABSOLUTELY NO WARRANTY.  This is free software, and you are\nwelcome to redistribute it under certain conditions.\n"
+    #print "Use the --daemon or -d option to start %s as a daemon.\n" % argv[0]
 
     # Check for neccesary bins
     if not functions.check_required():
@@ -156,7 +156,11 @@ if __name__ == '__main__':
 
     # Setting volume of alsa to volume of sb
     volume = sq.get_volume()
-    Popen(['amixer', 'set', 'Master', str(volume)+"%"], stdout=nulfp.fileno())
+    retcode = Popen(['amixer', 'set', 'Master', str(volume)+"%"], stdout=nulfp.fileno(), stderr=nulfp.fileno()).wait()
+    if retcode==0:
+        logging.info('Local volume set to %s percent', volume)
+    else:
+        logging.info('Local volume set failed with return code %i', retcode)
 
     # All the magic: in this request we subscribe to all playlist events
     # and volume changes
