@@ -53,7 +53,7 @@ def stripmac(state,mac):
 def check_required():
     nulfp = open(devnull, "w")
 
-    for bin in ['sox', 'flac', 'lame', 'play']:
+    for bin in ['sox', 'flac', 'lame', 'play', 'amixer']:
         check = Popen(['which', bin], stdout=nulfp.fileno(), stderr=nulfp.fileno()).wait()
         if not check==0:
             logging.critical("Neccesary %s program not found on your system", bin)
