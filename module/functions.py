@@ -29,11 +29,11 @@ def get_time_info(state):
         end = float(end)
         begin = float(begin)
         newstate = [state, 
-                    begin, 
-                    end, 
-                    length]
+                    float(begin), 
+                    float(end), 
+                    float(length)]
     else:
-        newstate = [state, "", "", ""]
+        newstate = [state, float(0), float(0), float(0)]
 
     return newstate
 

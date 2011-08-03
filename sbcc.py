@@ -100,6 +100,7 @@ def main(sbs, sq, song):
             elif "time" in state:
                 state = state.replace("time", "")
                 state = state.strip()
+                state = float(state)
                 song.seekto(state)
 
             else:

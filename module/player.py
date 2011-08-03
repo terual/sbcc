@@ -44,21 +44,35 @@ class player:
         self.end = state[2]
         self.length = state[3]
 
-        if self.begin:
+        if self.begin != 0:
             # Time information available, assuming image+cue
             if ".flac" in self.filename:
-                self.cmd = ['flac', 
-                            '-dcs', 
-                            '--skip='+str(timedelta(seconds=self.begin)).replace("0:", "", 1), 
-                            '--until='+str(timedelta(seconds=self.end)).replace("0:", "", 1), 
-                            self.filename]
+                if self.end==0:
+                    self.cmd = ['flac', 
+                                '-dcs', 
+                                '--skip='+str(timedelta(seconds=self.begin)).replace("0:", "", 1), 
+                                self.filename]
+                else:
+                    self.cmd = ['flac', 
+                                '-dcs', 
+                                '--skip='+str(timedelta(seconds=self.begin)).replace("0:", "", 1), 
+                                '--until='+str(timedelta(seconds=self.end)).replace("0:", "", 1), 
+                                self.filename]
             else:
-                self.cmd = ['sox', 
-                            '--no-show-progress', 
-                            self.filename, 
-                            'trim', str(timedelta(seconds=self.begin)), str(timedelta(seconds=self.length)), 
-                            '--type', 'wav', 
-                            '-' ]
+                if self.length==0:
+                    self.cmd = ['sox', 
+                                '--no-show-progress', 
+                                self.filename, 
+                                'trim', str(timedelta(seconds=self.begin)), 
+                                '--type', 'wav', 
+                                '-' ]
+                else:
+                    self.cmd = ['sox', 
+                                '--no-show-progress', 
+                                self.filename, 
+                                'trim', str(timedelta(seconds=self.begin)), str(timedelta(seconds=self.length)), 
+                                '--type', 'wav', 
+                                '-' ]
         else:
             if ".flac" in self.filename:
                 self.cmd = ['flac', 
@@ -111,13 +125,9 @@ class player:
 
     def seekto(self, time):
         if self.play_pid:
-            try:
-                time = float(time)
-                self.kill()
-                self.open([self.filename, self.begin+time, self.end, self.length-time])
-                logging.debug("Seeking to %s", time)
-            except:
-                pass
+            self.kill()
+            self.open([self.filename, self.begin+time, self.end, self.length-time])
+            logging.debug("Seeking to %s", time)
 
     def play(self):
         if self.play_pid:
