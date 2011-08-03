@@ -26,9 +26,9 @@ from time import time, sleep
 
 # Python2 compatibility
 try:
-    from urllib.parse import unquote
+    from urllib.parse import quote, unquote
 except ImportError:
-    from urllib import unquote
+    from urllib import quote, unquote
 try:
     import configparser
 except ImportError:
@@ -49,10 +49,15 @@ def main(sbs, sq, song):
         current = []
         while True:
             try:
-                state = unquote(sbs.telnet.read_until("\n"))
+                state = sbs.telnet.read_until(b"\n")
             except EOFError:
                 logging.critical("Connection lost to server!")
                 break
+
+            try:
+                state = unquote(str(state, 'utf-8'))
+            except TypeError:
+                state = unquote(str(state).decode('utf-8'))
 
             state = functions.stripmac(state, config['mac'])
             logging.debug("TELNET: %s", state)
@@ -147,7 +152,7 @@ def connect(config):
 
     # All the magic: in this request we subscribe to all playlist events,
     # time changes, and volume changes
-    sbs.request("subscribe time%2Cplaylist%2Cmixer volume")
+    sbs.request(quote("subscribe time,playlist,mixer volume", safe=" "))
 
     return sbs, sq
 
@@ -155,7 +160,7 @@ def connect(config):
 
 if __name__ == '__main__':
 
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
+    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S', level=logging.DEBUG)
     nulfp = open(devnull, "w")
 
     print("\nsbcc - SqueezeBox CopyCat version 0.5  Copyright (C) 2010-2011 Bart Lauret")
