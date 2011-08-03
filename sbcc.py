@@ -22,15 +22,23 @@ from sys import exit, argv
 from socket import error as socketerror
 import logging
 from subprocess import Popen
-
-from pysqueezecenter.server import Server
-from pysqueezecenter.player import Player
-from urllib import unquote
 from time import time, sleep
 
-import player
-import setup
-import functions
+# Python2 compatibility
+try:
+    from urllib.parse import unquote
+except ImportError:
+    from urllib import unquote
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
+import module.player as player
+import module.setup as setup
+import module.functions as functions
+from module.pysqueezecenter.server import Server
+from module.pysqueezecenter.player import Player
 
 def main(sbs, sq, song):
     """
@@ -147,22 +155,21 @@ def connect(config):
 
 if __name__ == '__main__':
 
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S', level=logging.DEBUG)
+    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
     nulfp = open(devnull, "w")
 
-    print "\nsbcc - SqueezeBox CopyCat version 0.5  Copyright (C) 2010-2011 Bart Lauret"
-    print "sbcc comes with ABSOLUTELY NO WARRANTY.  This is free software, and you are\nwelcome to redistribute it under certain conditions.\n"
-    #print "Use the --daemon or -d option to start %s as a daemon.\n" % argv[0]
+    print("\nsbcc - SqueezeBox CopyCat version 0.5  Copyright (C) 2010-2011 Bart Lauret")
+    print("sbcc comes with ABSOLUTELY NO WARRANTY.  This is free software, and you are\nwelcome to redistribute it under certain conditions.\n")
+    #print("Use the --daemon or -d option to start %s as a daemon.\n" % argv[0])
 
     # Check for neccesary bins
     if not functions.check_required():
         exit(1)
 
     # Configuration
-    import ConfigParser
     config = {}
     
-    loadconfig = ConfigParser.RawConfigParser(
+    loadconfig = configparser.RawConfigParser(
         defaults={'host':'127.0.0.1',
                   'port':'9090',
                   'user':'',
@@ -171,13 +178,13 @@ if __name__ == '__main__':
                   'output':'',
                   })
     
-    logging.info("Path to config: " + path.dirname(argv[0]) + "/sbcc.cfg")
-    loadconfig.read(path.dirname(argv[0]) + '/sbcc.cfg')
+    logging.info("Path to config: " + path.realpath(path.dirname(argv[0])) + "/sbcc.cfg")
+    loadconfig.read(path.realpath(path.dirname(argv[0])) + '/sbcc.cfg')
 
     try:
         for options in loadconfig.options('global'):                # creating dict of keys-values (why isn't this normally supported?)
             config[options] = loadconfig.get('global', options)
-    except ConfigParser.NoSectionError:
+    except configparser.NoSectionError:
         config = setup.setup()
 
     # Additional debugging info

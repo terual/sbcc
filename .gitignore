@@ -2,3 +2,5 @@
 *.pyc
 *.cfg
 
+#created by 2to3
+*.bak

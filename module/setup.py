@@ -20,19 +20,23 @@ def setup():
 
     import sys
     from socket import error as socketerror
-    import ConfigParser
-    from pysqueezecenter.server import Server
-    from pysqueezecenter.player import Player
-    from urllib import unquote
+    import configparser
+    from module.pysqueezecenter.server import Server
+    from module.pysqueezecenter.player import Player
+    # Python2 compatibility
+    try:
+        from urllib.parse import unquote
+    except ImportError:
+        from urllib import unquote
 
-    print "No config file found, please provide the following details. The default is provided between brackets."
+    print("No config file found, please provide the following details. The default is provided between brackets.")
 
     config = {}
 
-    config['host'] = raw_input("IP address of Squeezebox Server [127.0.0.1]: ")
-    config['port'] = raw_input("Port of Squeezebox Server [9090]: ")
-    config['user'] = raw_input("Username of server's CLI []: ")
-    config['passwd'] = raw_input("Password of server's CLI []: ")
+    config['host'] = input("IP address of Squeezebox Server [127.0.0.1]: ")
+    config['port'] = input("Port of Squeezebox Server [9090]: ")
+    config['user'] = input("Username of server's CLI []: ")
+    config['passwd'] = input("Password of server's CLI []: ")
 
     if not config['host']:
         config['host'] = "127.0.0.1"
@@ -45,41 +49,41 @@ def setup():
                  username=config['user'], 
                  password=config['passwd'] )
 
-    print
+    print()
     try:
         sbs.connect()
         if sbs.logged_in:
-            print "Succesfully connected to Squeezebox Server v%s on %s:%s" % ( sbs.get_version(), config['host'], config['port'] )
+            print("Succesfully connected to Squeezebox Server v%s on %s:%s" % ( sbs.get_version(), config['host'], config['port'] ))
         else:
-            print "Could not connect to server, possible wrong credentials, run %s again" % sys.argv[0]
+            print("Could not connect to server, possible wrong credentials, run %s again" % sys.argv[0])
             sys.exit(1)
     except socketerror:
-        print "Network is unreachable, check ip/port settings and run %s again." % sys.argv[0]
+        print("Network is unreachable, check ip/port settings and run %s again." % sys.argv[0])
         sys.exit(1)
 
-    print
-    print "The following players are connected to the server:"
+    print()
+    print("The following players are connected to the server:")
     players = sbs.get_players()
 
     for i in range(len(players)):
         player = str(players[i]).replace("Player: ","")
-        print "[%i]: %s" % (i+1, player)
+        print("[%i]: %s" % (i+1, player))
 
-    answer = int(raw_input("Press the number which MAC address you want to use: "))-1
+    answer = int(input("Press the number which MAC address you want to use: "))-1
     config['mac'] = str(players[answer]).replace("Player: ","")
 
-    print
+    print()
     sq = sbs.get_player(config['mac'])
-    print "Path to current song in playlist, use this as a hint for the following question."
-    print unquote(sq.get_track_path())
+    print("Path to current song in playlist, use this as a hint for the following question.")
+    print(unquote(sq.get_track_path()))
 
 
-    config['remotefolder'] = raw_input("Remote folder where music resides on Squeezebox Server, e.g. file:///path/to/music []: ")
-    config['localfolder'] = raw_input("Local folder where music resides locally, e.g. /path/to/music []: ")
-    config['driver'] = raw_input("Music driver to use [alsa]: ")
-    config['output'] = raw_input("Audio device to use e.g.plughw:0,0 []: ")
+    config['remotefolder'] = input("Remote folder where music resides on Squeezebox Server, e.g. file:///path/to/music []: ")
+    config['localfolder'] = input("Local folder where music resides locally, e.g. /path/to/music []: ")
+    config['driver'] = input("Music driver to use [alsa]: ")
+    config['output'] = input("Audio device to use e.g.plughw:0,0 []: ")
 
-    setupconfig = ConfigParser.RawConfigParser()
+    setupconfig = configparser.RawConfigParser()
 
     setupconfig.add_section('global')
     setupconfig.set('global', 'host', config['host'])
@@ -96,7 +100,7 @@ def setup():
     with open('sbcc.cfg', 'wb') as configfile:
         setupconfig.write(configfile)
 
-    print "Configuration is setup successfully!"
+    print("Configuration is setup successfully!")
 
     return config
 
