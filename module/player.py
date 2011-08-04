@@ -21,7 +21,8 @@ import subprocess
 import logging
 from os import devnull
 from time import time
-from datetime import timedelta
+from module.functions import flac_time
+from module.functions import sox_time
 
 class player:
     """
@@ -51,27 +52,27 @@ class player:
                 if self.end==0:
                     self.cmd = ['flac', 
                                 '-dcs', 
-                                '--skip='+str(timedelta(seconds=self.begin)).replace("0:", "", 1), 
+                                '--skip='+flac_time(self.begin), 
                                 self.filename]
                 else:
                     self.cmd = ['flac', 
                                 '-dcs', 
-                                '--skip='+str(timedelta(seconds=self.begin)).replace("0:", "", 1), 
-                                '--until='+str(timedelta(seconds=self.end)).replace("0:", "", 1), 
+                                '--skip='+flac_time(self.begin), 
+                                '--until='+flac_time(self.end), 
                                 self.filename]
             else:
                 if self.length==0:
                     self.cmd = ['sox', 
                                 '--no-show-progress', 
                                 self.filename, 
-                                'trim', str(timedelta(seconds=self.begin)), 
+                                'trim', sox_time(self.begin), 
                                 '--type', 'wav', 
                                 '-' ]
                 else:
                     self.cmd = ['sox', 
                                 '--no-show-progress', 
                                 self.filename, 
-                                'trim', str(timedelta(seconds=self.begin)), str(timedelta(seconds=self.length)), 
+                                'trim', sox_time(self.begin), sox_time(self.length), 
                                 '--type', 'wav', 
                                 '-' ]
         else:
@@ -92,7 +93,6 @@ class player:
                             '--type', 'wav', 
                             '-' ]
 
-        
         self.process_dec = subprocess.Popen(self.cmd, 
                                             stdout=subprocess.PIPE, 
                                             stderr=self.nulfp.fileno() )
@@ -123,6 +123,7 @@ class player:
 
         if not self.process_dec.poll()==None:
             logging.error("Error in decoding process, return code %s", self.process_dec.poll())
+            self.kill()
 
     def seekto(self, time):
         if self.play_pid:

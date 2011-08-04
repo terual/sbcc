@@ -19,7 +19,10 @@
 import logging
 from subprocess import Popen
 from os import devnull
-
+try:
+    from functools import reduce
+except:
+    pass
 
 def get_time_info(state):
     if "#" in state:
@@ -59,5 +62,20 @@ def check_required():
             logging.critical("Neccesary %s program not found on your system", bin)
             return False
     return True
+
+def flac_time(t):
+    # adapted from Paul McGuire 
+    # http://stackoverflow.com/questions/1384406/python-convert-seconds-to-hhmmss
+    # flac wants mm:ss.ms
+    return "%02d:%02d.%03d" % \
+        reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], 
+            [(t*1000,), 1000, 60])
+
+def sox_time(t):
+    # idem as flac_time
+    # but sox wants hh:mm:ss.ms
+    return "%02d:%02d:%02d.%03d" % \
+        reduce(lambda ll,b : divmod(ll[0],b) + ll[1:],
+            [(t*1000,),1000,60,60])
 
 
