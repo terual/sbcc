@@ -93,12 +93,12 @@ class player:
                             '-' ]
 
         
-
         self.process_dec = subprocess.Popen(self.cmd, 
                                             stdout=subprocess.PIPE, 
                                             stderr=self.nulfp.fileno() )
         self.dec_pid = self.process_dec.pid
         logging.debug("Decoding process PID %s started: %s", self.process_dec.pid, self.cmd)
+
 
         self.process = subprocess.Popen(['play', 
                                          '--no-show-progress', 
@@ -146,10 +146,12 @@ class player:
 
     def play(self):
         if self.play_pid:
+            logging.debug("Unpause")
             self.process_dec.send_signal(signal.SIGCONT)
 
     def pause(self):
         if self.play_pid:
+            logging.debug("Pause")
             self.process_dec.send_signal(signal.SIGSTOP)
 
     def kill(self):

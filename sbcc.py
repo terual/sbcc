@@ -77,15 +77,13 @@ def main(sbs, sq, song):
                     logging.debug("Duplicate 'open': %s", state_time)
 
             elif "newsong" in state:
-                logging.info("Start playback '%s - %s'", sq.get_track_artist(), sq.get_track_title())
+                logging.info("Play: '%s - %s'", sq.get_track_artist(), sq.get_track_title())
                 song.play()
 
             elif state=="pause 0":
-                logging.info("Unpause")
                 song.play()
 
             elif state=="pause 1":
-                logging.info("Pause")
                 song.pause()
 
             elif state=="stop":
@@ -101,6 +99,9 @@ def main(sbs, sq, song):
                 state = state.strip()
                 state = float(state)
                 song.seekto(state)
+
+            elif "jump" in state:
+                song.kill()
 
             else:
                 #telnet command which do not get interpreted
@@ -159,7 +160,7 @@ if __name__ == '__main__':
     print("sbcc comes with ABSOLUTELY NO WARRANTY.  This is free software, and you are\nwelcome to redistribute it under certain conditions.\n")
     #print("Use the --daemon or -d option to start %s as a daemon.\n" % argv[0])
 
-    # Check for neccesary bins
+    # Check for neccesary binaries
     if not functions.check_required():
         exit(1)
 
@@ -175,7 +176,7 @@ if __name__ == '__main__':
                   'output':'',
                   })
     
-    logging.info("Path to config: " + path.realpath(path.dirname(argv[0])) + "/sbcc.cfg")
+    logging.info("Reading config: " + path.realpath(path.dirname(argv[0])) + "/sbcc.cfg")
     loadconfig.read(path.realpath(path.dirname(argv[0])) + '/sbcc.cfg')
 
     try:
