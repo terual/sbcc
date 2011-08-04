@@ -201,9 +201,11 @@ if __name__ == '__main__':
                 #try to play current song
                 state_list = functions.get_time_info(unquote(sq.get_track_path()).replace(config['remotefolder'], config['localfolder']))
                 state_list[1] += sq.get_time_elapsed()
-                state_list[3] -= sq.get_time_elapsed()
+                if state_list[3] != 0:
+                    state_list[3] -= sq.get_time_elapsed()
                 logging.debug('%s', state_list)
                 song.open(state_list)
+                logging.info("Play: '%s - %s' skipped to %s", sq.get_track_artist(), sq.get_track_title(), state_list[1])
                 song.play()
 
             if main(sbs, sq, song):
