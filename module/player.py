@@ -37,6 +37,7 @@ class player:
         self.nulfp = open(devnull, "w")
         self.driver = driver
         self.output = output
+        self.volume = 0
 
     def open(self, state):
         self.filename = state[0]
@@ -128,6 +129,20 @@ class player:
             self.kill()
             self.open([self.filename, self.begin+time, self.end, self.length-time])
             logging.debug("Seeking to %s", time)
+
+    def set_volume(self, volume):
+        self.volume += int(volume)
+        if self.volume>100:
+            self.volume=100
+        if self.volume<0:
+            self.volume=0
+
+        retcode = subprocess.Popen(['amixer', 'set', 'Master', str(self.volume)+"%"], stdout=self.nulfp.fileno(), stderr=self.nulfp.fileno()).wait()
+        if retcode==0:
+            logging.info('Local volume set to %s percent', self.volume)
+        else:
+            logging.info('Local volume set failed with return code %i trying to set volume to %i', retcode, self.volume)
+
 
     def play(self):
         if self.play_pid:

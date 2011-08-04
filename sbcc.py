@@ -94,8 +94,7 @@ def main(sbs, sq, song):
             elif "mixer volume" in state:
                 state = state.replace("mixer volume", "")
                 state = state.strip()
-                logging.info("Change volume to %s percent", state)
-                Popen(['amixer', 'set', 'Master', str(state)+"%"], stdout=nulfp.fileno())
+                song.set_volume(state)
 
             elif "time" in state:
                 state = state.replace("time", "")
@@ -143,14 +142,6 @@ def connect(config):
                  sq.get_mode(), sq.get_time_elapsed(), 
                  sq.is_connected, sq.get_wifi_signal_strength())
 
-    # Setting volume of alsa to volume of sb
-    volume = sq.get_volume()
-    retcode = Popen(['amixer', 'set', 'Master', str(volume)+"%"], stdout=nulfp.fileno(), stderr=nulfp.fileno()).wait()
-    if retcode==0:
-        logging.info('Local volume set to %s percent', volume)
-    else:
-        logging.info('Local volume set failed with return code %i', retcode)
-
     # All the magic: in this request we subscribe to all playlist events,
     # time changes, and volume changes
     sbs.request(quote("subscribe time,playlist,mixer volume", safe=" "))
@@ -161,7 +152,7 @@ def connect(config):
 
 if __name__ == '__main__':
 
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S', level=logging.DEBUG)
+    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
     nulfp = open(devnull, "w")
 
     print("\nsbcc - SqueezeBox CopyCat version 0.5  Copyright (C) 2010-2011 Bart Lauret")
@@ -203,6 +194,8 @@ if __name__ == '__main__':
         sbs, sq = connect(config)
         if sbs and sq:
             song = player.player(config['driver'], config['output'])
+            song.set_volume(sq.get_volume())
+
             if main(sbs, sq, song):
                 # This means that we want to exit and not stay in loop
                 exit(0)
