@@ -197,6 +197,15 @@ if __name__ == '__main__':
             song = player.player(config['driver'], config['output'])
             song.set_volume(sq.get_volume())
 
+            if sq.get_mode()=="play":
+                #try to play current song
+                state_list = functions.get_time_info(unquote(sq.get_track_path()).replace(config['remotefolder'], config['localfolder']))
+                state_list[1] += sq.get_time_elapsed()
+                state_list[3] -= sq.get_time_elapsed()
+                logging.debug('%s', state_list)
+                song.open(state_list)
+                song.play()
+
             if main(sbs, sq, song):
                 # This means that we want to exit and not stay in loop
                 exit(0)
